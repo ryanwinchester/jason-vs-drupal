@@ -1,0 +1,195 @@
+<?php
+
+/**
+* Valid permissions for this module
+* @return array An array of valid permissions for the onthisdate module
+*/
+function buhbye_perm()
+{
+  return array('access buhbye content');
+}
+
+function buhbye_menu()
+{
+    $items = array();
+
+    $items['admin/settings/buhbye'] = array(
+        'title'            => 'Buh Bye Drupal module settings',
+        'description'      => 'Do settings stuff',
+        'page callback'    => 'drupal_get_form',
+        'page arguments'   => array('buhbye_admin'),
+        'access arguments' => array('access administration pages'),
+        'type'             => MENU_NORMAL_ITEM,
+    );
+
+    $items['buhbye/articles'] = array(
+        'access callback'  => true,
+        'page callback'    => 'buhbye_articles',
+    );
+
+    $items['buhbye/categories'] = array(
+        'access callback'  => true,
+        'page callback'    => 'buhbye_categories',
+    );
+
+    $items['buhbye/tags'] = array(
+        'access callback'  => true,
+        'page callback'    => 'buhbye_tags',
+    );
+
+    $items['buhbye/ratings'] = array(
+        'access callback'  => true,
+        'page callback'    => 'buhbye_ratings',
+    );
+
+    return $items;
+}
+
+function buhbye_articles()
+{
+    $nodes = array();
+
+    $query = 'SELECT
+                tn.vid AS drupal_vid,
+                tn.tid AS drupal_tid,
+                td.name AS category_name,
+                n.type,
+                n.title,
+                body.field_bodytext_value AS body,
+                article.field_quote_value AS quote,
+                article.field_byline_value AS author,
+                article.field_author_info_value AS author_info,
+                article.field_article_copyright_value AS copyright,
+                article.field_footnotes_value AS footnotes,
+                n.created as created_at,
+                n.changed as updated_at
+              FROM {term_node} tn
+                LEFT JOIN {node} n ON n.vid = tn.vid
+                LEFT JOIN {node_revisions} nr ON tn.vid = nr.vid
+                LEFT JOIN {term_data} td ON td.tid = tn.tid
+                LEFT JOIN {content_field_bodytext} body ON tn.vid = body.vid
+                LEFT JOIN {content_type_article} article ON article.vid = tn.vid
+            WHERE n.type = "article"';
+
+    $result =  db_query($query);
+
+    while ($node = db_fetch_object($result)) {
+        $node->drupal_vid = (int) $node->drupal_vid;
+        $node->drupal_tid = (int) $node->drupal_tid;
+        $node->created_at = (int) $node->created_at;
+        $node->updated_at = (int) $node->updated_at;
+        $nodes[] = $node;
+    }
+
+    drupal_set_header('Content-Type: application/json');
+    print(json_encode($nodes));
+    module_invoke_all('exit');
+    exit;
+}
+
+function buhbye_categories()
+{
+    $nodes = array();
+
+    $query = 'SELECT
+                th.tid AS drupal_tid,
+                th.parent as drupal_parent_tid,
+                td.name
+            FROM {term_data} td
+                LEFT JOIN {term_hierarchy} th ON td.tid = th.tid
+            ORDER BY th.tid;';
+
+    $result =  db_query($query);
+
+    while ($node = db_fetch_object($result)) {
+        $node->drupal_tid = (int) $node->drupal_tid;
+        $node->drupal_parent_tid = (int) $node->drupal_parent_tid;
+        $nodes[] = $node;
+    }
+
+    drupal_set_header('Content-Type: application/json');
+    print(json_encode($nodes));
+    module_invoke_all('exit');
+    exit;
+}
+
+function buhbye_tags()
+{
+    $nodes = array();
+
+    $query = 'SELECT
+                nr.vid as drupal_vid,
+                tag.tid as drupal_tid,
+                nr.title,
+                links.field_referral_organizations_value AS referrals,
+                links.field_foundations_value AS foundations,
+                links.field_resources_value AS resources,
+                n.created as created_at,
+                n.changed as updated_at
+            FROM {taxonomy_facets_term_node} tag
+                LEFT JOIN {content_type_topic} links ON tag.nid = links.nid
+                LEFT JOIN {node} n ON links.vid = n.vid
+                LEFT JOIN {node_revisions} nr ON links.vid = nr.vid';
+
+    $result =  db_query($query);
+
+    while ($node = db_fetch_object($result)) {
+        $node->drupal_vid = (int) $node->drupal_vid;
+        $node->drupal_tid = (int) $node->drupal_tid;
+        $node->created_at = (int) $node->created_at;
+        $node->updated_at = (int) $node->updated_at;
+        $nodes[] = $node;
+    }
+
+    drupal_set_header('Content-Type: application/json');
+    print(json_encode($nodes));
+    module_invoke_all('exit');
+    exit;
+}
+
+function buhbye_ratings()
+{
+    $nodes = array();
+
+    $query = 'SELECT
+                v.vote_id,
+                n.vid AS drupal_vid,
+                n.title,
+                v.value AS rating,
+                v.vote_source AS voter_ip,
+                v.timestamp AS voted_on
+            FROM {votingapi_vote} v
+                LEFT JOIN {node} n ON v.content_id = n.nid
+            WHERE n.vid IS NOT NULL';
+
+    $result =  db_query($query);
+
+    while ($node = db_fetch_object($result)) {
+        $node->vote_id = (int) $node->vote_id;
+        $node->drupal_vid = (int) $node->drupal_vid;
+        $node->rating = (int) $node->rating;
+        $node->voted_on = (int) $node->voted_on;
+        $nodes[] = $node;
+    }
+
+    drupal_set_header('Content-Type: application/json');
+    print(json_encode($nodes));
+    module_invoke_all('exit');
+    exit;
+}
+
+function buhbye_admin() {
+  $form = array();
+
+  $form['buhbye_maxdisp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Maximum number of links'),
+    '#default_value' => variable_get('onthisdate_maxdisp', 3),
+    '#size' => 2,
+    '#maxlength' => 2,
+    '#description' => t("The maximum number of links to display in the block."),
+    '#required' => TRUE,
+  );
+
+  return system_settings_form($form);
+}

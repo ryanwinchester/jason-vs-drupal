@@ -1,51 +1,48 @@
 <?php
 
 /**
-* Valid permissions for this module
-* @return array An array of valid permissions for the onthisdate module
-*/
-function buhbye_perm()
-{
-  return array('access buhbye content');
-}
-
-function buhbye_menu()
+ * @return array
+ */
+function jason_menu()
 {
     $items = array();
 
-    $items['admin/settings/buhbye'] = array(
+    $items['jason/articles'] = array(
+        'access callback'  => true,
+        'page callback'    => 'jason_articles',
+    );
+
+    $items['jason/categories'] = array(
+        'access callback'  => true,
+        'page callback'    => 'jason_categories',
+    );
+
+    $items['jason/tags'] = array(
+        'access callback'  => true,
+        'page callback'    => 'jason_tags',
+    );
+
+    $items['jason/ratings'] = array(
+        'access callback'  => true,
+        'page callback'    => 'jason_ratings',
+    );
+
+    $items['admin/settings/jason'] = array(
         'title'            => 'Buh Bye Drupal module settings',
         'description'      => 'Do settings stuff',
         'page callback'    => 'drupal_get_form',
-        'page arguments'   => array('buhbye_admin'),
+        'page arguments'   => array('jason_admin'),
         'access arguments' => array('access administration pages'),
         'type'             => MENU_NORMAL_ITEM,
-    );
-
-    $items['buhbye/articles'] = array(
-        'access callback'  => true,
-        'page callback'    => 'buhbye_articles',
-    );
-
-    $items['buhbye/categories'] = array(
-        'access callback'  => true,
-        'page callback'    => 'buhbye_categories',
-    );
-
-    $items['buhbye/tags'] = array(
-        'access callback'  => true,
-        'page callback'    => 'buhbye_tags',
-    );
-
-    $items['buhbye/ratings'] = array(
-        'access callback'  => true,
-        'page callback'    => 'buhbye_ratings',
     );
 
     return $items;
 }
 
-function buhbye_articles()
+/**
+ * Get all the articles as JSON
+ */
+function jason_articles()
 {
     $nodes = array();
 
@@ -87,7 +84,10 @@ function buhbye_articles()
     exit;
 }
 
-function buhbye_categories()
+/**
+ * Get all the categories as JSON
+ */
+function jason_categories()
 {
     $nodes = array();
 
@@ -113,7 +113,10 @@ function buhbye_categories()
     exit;
 }
 
-function buhbye_tags()
+/**
+ * Get all the tags as JSON
+ */
+function jason_tags()
 {
     $nodes = array();
 
@@ -147,7 +150,10 @@ function buhbye_tags()
     exit;
 }
 
-function buhbye_ratings()
+/**
+ * Get all the ratings as JSON
+ */
+function jason_ratings()
 {
     $nodes = array();
 
@@ -178,10 +184,16 @@ function buhbye_ratings()
     exit;
 }
 
-function buhbye_admin() {
+/**
+ * Some admin stuff...
+ *
+ * @return mixed
+ */
+function jason_admin()
+{
   $form = array();
 
-  $form['buhbye_maxdisp'] = array(
+  $form['jason_maxdisp'] = array(
     '#type' => 'textfield',
     '#title' => t('Maximum number of links'),
     '#default_value' => variable_get('onthisdate_maxdisp', 3),
@@ -192,4 +204,14 @@ function buhbye_admin() {
   );
 
   return system_settings_form($form);
+}
+
+/**
+ * Valid permissions for this module.
+ *
+ * @return array
+ */
+function jason_perm()
+{
+    return array('access jason content');
 }

@@ -1,6 +1,9 @@
 <?php
 
 /**
+ * Jason Versus Drupal hook_menu.
+ * Display content as JSON (jason... get it?) for whatever purposes you intend.
+ *
  * @return array
  */
 function jason_menu()
@@ -8,32 +11,23 @@ function jason_menu()
     $items = array();
 
     $items['jason/articles'] = array(
-        'access callback'  => true,
-        'page callback'    => 'jason_articles',
+        'access callback' => true,
+        'page callback'   => 'jason_articles',
     );
 
     $items['jason/categories'] = array(
-        'access callback'  => true,
-        'page callback'    => 'jason_categories',
+        'access callback' => true,
+        'page callback'   => 'jason_categories',
     );
 
     $items['jason/tags'] = array(
-        'access callback'  => true,
-        'page callback'    => 'jason_tags',
+        'access callback' => true,
+        'page callback'   => 'jason_tags',
     );
 
     $items['jason/ratings'] = array(
-        'access callback'  => true,
-        'page callback'    => 'jason_ratings',
-    );
-
-    $items['admin/settings/jason'] = array(
-        'title'            => 'Buh Bye Drupal module settings',
-        'description'      => 'Do settings stuff',
-        'page callback'    => 'drupal_get_form',
-        'page arguments'   => array('jason_admin'),
-        'access arguments' => array('access administration pages'),
-        'type'             => MENU_NORMAL_ITEM,
+        'access callback' => true,
+        'page callback'   => 'jason_ratings',
     );
 
     return $items;
@@ -68,7 +62,7 @@ function jason_articles()
                 LEFT JOIN {content_type_article} article ON article.vid = tn.vid
             WHERE n.type = "article"';
 
-    $result =  db_query($query);
+    $result = db_query($query);
 
     while ($node = db_fetch_object($result)) {
         $node->drupal_vid = (int) $node->drupal_vid;
@@ -99,7 +93,7 @@ function jason_categories()
                 LEFT JOIN {term_hierarchy} th ON td.tid = th.tid
             ORDER BY th.tid;';
 
-    $result =  db_query($query);
+    $result = db_query($query);
 
     while ($node = db_fetch_object($result)) {
         $node->drupal_tid = (int) $node->drupal_tid;
@@ -134,7 +128,7 @@ function jason_tags()
                 LEFT JOIN {node} n ON links.vid = n.vid
                 LEFT JOIN {node_revisions} nr ON links.vid = nr.vid';
 
-    $result =  db_query($query);
+    $result = db_query($query);
 
     while ($node = db_fetch_object($result)) {
         $node->drupal_vid = (int) $node->drupal_vid;
@@ -168,7 +162,7 @@ function jason_ratings()
                 LEFT JOIN {node} n ON v.content_id = n.nid
             WHERE n.vid IS NOT NULL';
 
-    $result =  db_query($query);
+    $result = db_query($query);
 
     while ($node = db_fetch_object($result)) {
         $node->vote_id = (int) $node->vote_id;
@@ -182,36 +176,4 @@ function jason_ratings()
     print(json_encode($nodes));
     module_invoke_all('exit');
     exit;
-}
-
-/**
- * Some admin stuff...
- *
- * @return mixed
- */
-function jason_admin()
-{
-  $form = array();
-
-  $form['jason_maxdisp'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Maximum number of links'),
-    '#default_value' => variable_get('onthisdate_maxdisp', 3),
-    '#size' => 2,
-    '#maxlength' => 2,
-    '#description' => t("The maximum number of links to display in the block."),
-    '#required' => TRUE,
-  );
-
-  return system_settings_form($form);
-}
-
-/**
- * Valid permissions for this module.
- *
- * @return array
- */
-function jason_perm()
-{
-    return array('access jason content');
 }

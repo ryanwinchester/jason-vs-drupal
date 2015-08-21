@@ -69,11 +69,12 @@ function jason_articles()
                 n.type,
                 n.title,
                 body.field_bodytext_value AS body,
-                article.{$field_quote_value} AS quote,
+                article.{$field_quote_value} AS pull_quote,
                 article.field_byline_value AS author,
                 article.{$field_author_info_value} AS author_info,
                 article.{$field_article_copyright_value} AS copyright,
                 article.field_footnotes_value AS footnotes,
+                f.filepath AS image_path,
                 n.created as created_at,
                 n.changed as updated_at
               FROM {$term_node} tn
@@ -82,7 +83,9 @@ function jason_articles()
                 LEFT JOIN {$term_data} td ON td.tid = tn.tid
                 LEFT JOIN {content_field_bodytext} body ON tn.vid = body.vid
                 LEFT JOIN {content_type_article} article ON article.vid = tn.vid
-            WHERE n.type = 'article'";
+                LEFT JOIN {files} f ON article.field_image_fid = f.fid
+            WHERE n.type = 'article'
+            GROUP BY drupal_vid";
 
     $result = db_query($query);
 
@@ -149,10 +152,10 @@ function jason_tags()
 {
     $nodes = array();
 
-    // Multi-site, optionally specify domain number
-    if ( ! empty(func_get_arg(0))) {
+    // Multisite, optionally specify domain number
+    if (func_num_args() > 0) {
         $domain = (int) func_get_arg(0);
-        $taxonomy_facets_term_node = '{domain_' . $domain . '_taxonomy_facets_term_node}';
+        $taxonomy_facets_term_node = '{domain_' .$domain. '_taxonomy_facets_term_node}';
     } else {
         $taxonomy_facets_term_node = '{taxonomy_facets_term_node}';
     }

@@ -40,27 +40,49 @@ function jason_articles()
 {
     $nodes = array();
 
-    $query = 'SELECT
+    // Multi-site, optionally specify domain number
+    if (func_num_args() > 0) {
+        $domain = (int) func_get_arg(0);
+        $term_node = '{domain_' . $domain . '_term_node}';
+        $term_data = '{domain_' . $domain . '_term_data}';
+    } else {
+        $term_node = '{term_node}';
+        $term_data = '{term_data}';
+    }
+
+    // Multi-site, optionally specify domain alias
+    if (func_num_args() > 1) {
+        $domain = db_escape_string(func_get_arg(1));
+        $field_quote_value = "field_quote_{$domain}_value";
+        $field_author_info_value = "field_author_info_{$domain}_value";
+        $field_article_copyright_value = "field_article_copyright_{$domain}_value";
+    } else {
+        $field_quote_value = "field_quote_value";
+        $field_author_info_value = "field_author_info_value";
+        $field_article_copyright_value = "field_article_copyright_value";
+    }
+
+    $query = "SELECT
                 tn.vid AS drupal_vid,
                 tn.tid AS drupal_tid,
                 td.name AS category_name,
                 n.type,
                 n.title,
                 body.field_bodytext_value AS body,
-                article.field_quote_value AS quote,
+                article.{$field_quote_value} AS quote,
                 article.field_byline_value AS author,
-                article.field_author_info_value AS author_info,
-                article.field_article_copyright_value AS copyright,
+                article.{$field_author_info_value} AS author_info,
+                article.{$field_article_copyright_value} AS copyright,
                 article.field_footnotes_value AS footnotes,
                 n.created as created_at,
                 n.changed as updated_at
-              FROM {term_node} tn
+              FROM {$term_node} tn
                 LEFT JOIN {node} n ON n.vid = tn.vid
                 LEFT JOIN {node_revisions} nr ON tn.vid = nr.vid
-                LEFT JOIN {term_data} td ON td.tid = tn.tid
+                LEFT JOIN {$term_data} td ON td.tid = tn.tid
                 LEFT JOIN {content_field_bodytext} body ON tn.vid = body.vid
                 LEFT JOIN {content_type_article} article ON article.vid = tn.vid
-            WHERE n.type = "article"';
+            WHERE n.type = 'article'";
 
     $result = db_query($query);
 
@@ -79,25 +101,38 @@ function jason_articles()
 }
 
 /**
- * Get all the categories as JSON
+ * Get all the categories as JSON.
  */
 function jason_categories()
 {
     $nodes = array();
 
-    $query = 'SELECT
+    // Multi-site, optionally specify domain number
+    if (func_num_args() > 0) {
+        $domain = (int) func_get_arg(0);
+        $term_data = '{domain_' . $domain . '_term_data}';
+        $term_hierarchy = '{domain_' . $domain . '_term_hierarchy}';
+    } else {
+        $term_data = '{term_data}';
+        $term_hierarchy = '{term_hierarchy}';
+    }
+
+    $query = "SELECT
                 th.tid AS drupal_tid,
                 th.parent as drupal_parent_tid,
-                td.name
-            FROM {term_data} td
-                LEFT JOIN {term_hierarchy} th ON td.tid = th.tid
-            ORDER BY th.tid;';
+                td.vid as drupal_vid,
+                td.name,
+                td.description
+            FROM {$term_data} td
+                LEFT JOIN {$term_hierarchy} th ON td.tid = th.tid
+            ORDER BY th.tid;";
 
     $result = db_query($query);
 
     while ($node = db_fetch_object($result)) {
         $node->drupal_tid = (int) $node->drupal_tid;
         $node->drupal_parent_tid = (int) $node->drupal_parent_tid;
+        $node->drupal_vid = (int) $node->drupal_vid;
         $nodes[] = $node;
     }
 
@@ -114,7 +149,15 @@ function jason_tags()
 {
     $nodes = array();
 
-    $query = 'SELECT
+    // Multi-site, optionally specify domain number
+    if ( ! empty(func_get_arg(0))) {
+        $domain = (int) func_get_arg(0);
+        $taxonomy_facets_term_node = '{domain_' . $domain . '_taxonomy_facets_term_node}';
+    } else {
+        $taxonomy_facets_term_node = '{taxonomy_facets_term_node}';
+    }
+
+    $query = "SELECT
                 nr.vid as drupal_vid,
                 tag.tid as drupal_tid,
                 nr.title,
@@ -123,10 +166,10 @@ function jason_tags()
                 links.field_resources_value AS resources,
                 n.created as created_at,
                 n.changed as updated_at
-            FROM {taxonomy_facets_term_node} tag
+            FROM {$taxonomy_facets_term_node} tag
                 LEFT JOIN {content_type_topic} links ON tag.nid = links.nid
                 LEFT JOIN {node} n ON links.vid = n.vid
-                LEFT JOIN {node_revisions} nr ON links.vid = nr.vid';
+                LEFT JOIN {node_revisions} nr ON links.vid = nr.vid";
 
     $result = db_query($query);
 
